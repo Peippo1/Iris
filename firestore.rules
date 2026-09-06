@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Publicly accessible shared curated topic lists and libraries
+    match /sharedLibraries/{shareId} {
+      allow read: if true;
+      allow create: if request.resource.data.articles is list;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /savedDigests/{digestId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /listenLaterQueue/{queueId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /articles/{articleId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      match /recentSearches/{searchId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

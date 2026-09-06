@@ -1,0 +1,108 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "User account settings and preferences",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "defaultCommuteMinutes": { "type": "number" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "savedDigests": {
+      "title": "Saved Commute Digest",
+      "description": "Generated audio news broadcast digests",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "overview": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "config": { "type": "object" },
+        "articlesCount": { "type": "number" },
+        "segments": { "type": "array" },
+        "intro": { "type": "string" },
+        "outro": { "type": "string" },
+        "fullScript": { "type": "string" },
+        "audioDataUrl": { "type": "string" },
+        "audioDuration": { "type": "number" },
+        "chapters": { "type": "array" }
+      },
+      "required": ["userId", "title", "createdAt"]
+    },
+    "listenLaterQueue": {
+      "title": "Listen Later Queue Item",
+      "description": "Articles queued for later sequential playback",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "articleId": { "type": "string" },
+        "title": { "type": "string" },
+        "source": { "type": "string" },
+        "category": { "type": "string" },
+        "content": { "type": "string" },
+        "url": { "type": "string" },
+        "addedAt": { "type": "string" },
+        "order": { "type": "number" },
+        "isPlayed": { "type": "boolean" }
+      },
+      "required": ["userId", "title", "addedAt"]
+    },
+    "articles": {
+      "title": "Custom Article",
+      "description": "User curated news articles with category tags",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "source": { "type": "string" },
+        "category": { "type": "string" },
+        "content": { "type": "string" },
+        "url": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "category", "createdAt"]
+    },
+    "recentSearches": {
+      "title": "Recent Article Search",
+      "description": "User article search history and fetched article sets",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "query": { "type": "string" },
+        "type": { "type": "string" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "articlesCount": { "type": "number" },
+        "articles": { "type": "array" }
+      },
+      "required": ["userId", "query", "createdAt", "articles"]
+    },
+    "sharedLibraries": {
+      "title": "Public Shared Curated Library",
+      "description": "Publicly shared curated articles, topics, and commute configuration",
+      "type": "object",
+      "properties": {
+        "shareId": { "type": "string" },
+        "userId": { "type": "string" },
+        "creatorName": { "type": "string" },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "config": { "type": "object" },
+        "articles": { "type": "array" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "articlesCount": { "type": "number" }
+      },
+      "required": ["shareId", "createdAt", "articles"]
+    }
+  }
+}

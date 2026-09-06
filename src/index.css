@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #FFFFFF;
+  --surface: #F8F9FA;
+  --ink: #202124;
+  --ink-medium: #5F6368;
+  --ink-faint: #E8EAED;
+  --accent: #1A73E8;
+  --accent-soft: #E8F0FE;
+  --google-red: #EA4335;
+  --google-yellow: #FBBC04;
+  --google-green: #34A853;
+  --google-blue: #4285F4;
+  --radius-outer: 24px;
+  --radius-inner: 16px;
+}
+
+@layer base {
+  body {
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    background-color: var(--surface);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.font-serif {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-medium);
+  font-weight: 600;
+}
+
+.google-card-shadow {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.30), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.google-card-shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.20);
+}
+
