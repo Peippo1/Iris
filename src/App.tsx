@@ -23,6 +23,7 @@ import {
   History,
   Trash2,
   Copy,
+  Download,
   Search,
   Loader2,
 } from 'lucide-react';
@@ -221,6 +222,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'generator' | 'player' | 'queue'>('generator');
   const [clearedSuggestionsFeedback, setClearedSuggestionsFeedback] = useState(false);
   const [copiedScriptFeedback, setCopiedScriptFeedback] = useState(false);
+  const [downloadJsonFeedback, setDownloadJsonFeedback] = useState(false);
   const [quickTopicQuery, setQuickTopicQuery] = useState('');
   const [isQuickTopicSearching, setIsQuickTopicSearching] = useState(false);
   const [quickTopicFeedback, setQuickTopicFeedback] = useState<{
@@ -611,6 +613,37 @@ export default function App() {
       }, 2500);
     } catch (err) {
       console.error('Failed to copy script to clipboard:', err);
+    }
+  };
+
+  const handleDownloadArticlesJson = () => {
+    try {
+      const backupData = {
+        app: 'Iris - Commute Audio Briefings',
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        totalArticles: articles.length,
+        articles: articles,
+      };
+
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `iris_articles_backup_${timestamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setDownloadJsonFeedback(true);
+      setTimeout(() => {
+        setDownloadJsonFeedback(false);
+      }, 2500);
+    } catch (err) {
+      console.error('Failed to export articles JSON backup:', err);
     }
   };
 
@@ -1348,6 +1381,29 @@ export default function App() {
                       <>
                         <Copy className="w-4 h-4 mr-1.5 text-[#5F6368]" />
                         <span>Copy Script</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    id="btn-download-articles-json"
+                    type="button"
+                    onClick={handleDownloadArticlesJson}
+                    className={`inline-flex items-center px-4 py-2.5 text-xs font-medium rounded-full border transition-colors cursor-pointer ${
+                      downloadJsonFeedback
+                        ? 'bg-[#E6F4EA] text-[#34A853] border-[#34A853]/30'
+                        : 'text-[#202124] bg-[#F8F9FA] hover:bg-[#E8F0FE] hover:text-[#1A73E8] border-[#E8EAED]'
+                    }`}
+                    title="Export current article list as a structured JSON backup file"
+                  >
+                    {downloadJsonFeedback ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 mr-1.5 text-[#34A853]" />
+                        <span>JSON Downloaded!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1.5 text-[#5F6368]" />
+                        <span>Download JSON</span>
                       </>
                     )}
                   </button>
