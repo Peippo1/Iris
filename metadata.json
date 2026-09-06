@@ -1,6 +1,6 @@
 {
   "name": "Iris - Commute Audio Briefings",
-  "description": "Inspired by the Greek messenger goddess of swift dispatches: personalized, broadcast-ready audio news briefings tailored for your daily commute with Gemini AI.",
+  "description": "Inspired by the Greek messenger goddess of swift dispatches: personalised, broadcast-ready audio news briefings tailored for your daily commute with Gemini AI.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

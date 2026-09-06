@@ -170,7 +170,7 @@ export const ListenLaterQueue: React.FC<ListenLaterQueueProps> = ({
 
       const data = await res.json();
       if (!res.ok || !data.audioDataUrl) {
-        throw new Error(data.error || 'Failed to synthesize audio for this story');
+        throw new Error(data.error || 'Failed to synthesise audio for this story');
       }
 
       audioCacheRef.current[item.id] = {

@@ -42,7 +42,7 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
             <span>Interactive Broadcast Transcript</span>
           </h2>
           <p className="text-xs text-[#5F6368] mt-0.5">
-            Synchronized spoken script. Click any segment to jump playback directly.
+            Synchronised spoken script. Click any segment to jump playback directly.
           </p>
         </div>
 

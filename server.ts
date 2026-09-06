@@ -287,7 +287,7 @@ app.post('/api/generate-summary', async (req: Request, res: Response) => {
         ? `Format: Co-hosted podcast conversation between two anchors named "Alex" and "Sam". They share banter, ask each other insightful questions, bounce observations, and trade coverage of the stories. Make the dialogue feel natural and fluid.`
         : `Format: Single solo host named "Host". An articulate, captivating audio narrator speaking directly to the listener in their car, train, or headphones.`;
 
-    const systemPrompt = `You are an elite audio news broadcast producer creating a personalized commute audio digest.
+    const systemPrompt = `You are an elite audio news broadcast producer creating a personalised commute audio digest in UK English (British English).
 The commuter has a ${commuteMinutes}-minute transit window.
 ${toneInstructions[tone] || toneInstructions.morning_briefing}
 ${formatInstructions}
@@ -299,7 +299,8 @@ CRITICAL BROADCAST AUDIO RULES:
 3. Spell out acronyms phonetically or pronounceably where needed. Use conversational speech rhythms.
 4. Craft seamless transitions between news stories (e.g., "Turning now to clean energy...", "Meanwhile in global markets...", "Next up on your commute...").
 5. The total spoken script should be calibrated to comfortably fit approximately ${commuteMinutes} minutes at standard speech rate (~130-150 words per minute). For a ${commuteMinutes}-minute commute, target roughly ${Math.min(commuteMinutes * 120, 1000)} total words.
-6. Provide an engaging intro welcoming the listener to their personalized commute brief, discrete structured segments for each article with crisp headlines, and a smooth outro wishing them a great journey.`;
+6. Provide an engaging intro welcoming the listener to their personalised commute brief, discrete structured segments for each article with crisp headlines, and a smooth outro wishing them a safe journey.
+7. LANGUAGE & SPELLING: Always write the entire script, headlines, and overview in British English (UK English / en-GB). Strictly adhere to UK spelling (e.g., personalised, prioritised, categorised, synthesise, colour, programme, centre, motorway, tube/train) with natural British news delivery.`;
 
     const articlesPayload = articles.map((a: any, idx: number) => ({
       index: idx + 1,
@@ -313,7 +314,7 @@ CRITICAL BROADCAST AUDIO RULES:
       model: 'gemini-3.8-flash',
       contents: [
         {
-          text: `Create the personalized commute audio digest for these ${articles.length} news articles:\n\n${JSON.stringify(articlesPayload, null, 2)}`,
+          text: `Create the personalised commute audio digest in UK English for these ${articles.length} news articles:\n\n${JSON.stringify(articlesPayload, null, 2)}`,
         },
       ],
       config: {
@@ -430,7 +431,7 @@ app.post('/api/generate-audio', async (req: Request, res: Response) => {
 
     const ai = getAi();
 
-    // Prepare audio segments to synthesize
+    // Prepare audio segments to synthesise
     const audioTasks: Array<{
       id: string;
       title: string;
@@ -627,6 +628,7 @@ Write a concise, engaging spoken news brief for this story (approx 70-120 words)
 AUDIO GUIDELINES:
 - Spoken words only. NO markdown, asterisks, bullet points, brackets, or links.
 - Natural broadcast cadence: start with a clear, engaging lead-in mentioning the category or topic, explain the core developments, and highlight the key impact.
+- Language: British English (UK English / en-GB) with UK spelling conventions and natural BBC-style broadcasting phrasing.
 - Return ONLY the raw spoken text.`;
 
     const scriptResponse = await ai.models.generateContent({
@@ -636,7 +638,7 @@ AUDIO GUIDELINES:
 
     const spokenScript = scriptResponse.text?.trim() || `${title}. Reporting from ${source || 'the news desk'}. ${content ? content.slice(0, 200) : ''}`;
 
-    // 2. Synthesize with Gemini TTS
+    // 2. Synthesise with Gemini TTS
     const SAMPLE_RATE = 24000;
     const BYTES_PER_SECOND = SAMPLE_RATE * 1 * 2;
 
@@ -674,7 +676,7 @@ AUDIO GUIDELINES:
   } catch (err: any) {
     console.error('Queue article audio error:', err);
     return res.status(500).json({
-      error: err.message || 'Failed to synthesize queue article audio',
+      error: err.message || 'Failed to synthesise queue article audio',
     });
   }
 });

@@ -138,7 +138,7 @@ export default function App() {
     return SAMPLE_ARTICLES.slice(0, 3);
   });
 
-  // Category filtering & customization
+  // Category filtering & customisation
   const [customCategories, setCustomCategories] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CUSTOM_CATEGORIES);
@@ -898,10 +898,10 @@ export default function App() {
 
     setIsGenerating(true);
     setGenerationError(null);
-    setGenerationStep('1/2 Crafting personalized broadcast script with Gemini 3.8 Flash...');
+    setGenerationStep('1/2 Crafting personalised broadcast script with Gemini 3.8 Flash...');
 
     try {
-      // Step 1: Generate personalized script
+      // Step 1: Generate personalised script
       const summaryRes = await fetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -924,7 +924,7 @@ export default function App() {
       const scriptSummary = summaryData.summary;
 
       // Step 2: Generate TTS Audio using gemini-3.1-flash-tts-preview
-      setGenerationStep('2/2 Synthesizing natural studio audio with Gemini 3.1 Flash TTS...');
+      setGenerationStep('2/2 Synthesising natural studio audio with Gemini 3.1 Flash TTS...');
 
       const audioRes = await fetch('/api/generate-audio', {
         method: 'POST',
@@ -942,7 +942,7 @@ export default function App() {
 
       const audioData = await audioRes.json();
       if (!audioRes.ok) {
-        throw new Error(audioData.error || 'Failed to synthesize TTS audio');
+        throw new Error(audioData.error || 'Failed to synthesise TTS audio');
       }
 
       // Complete Summary Object
@@ -1076,10 +1076,10 @@ export default function App() {
                   )}
                 </div>
                 <h1 className="text-xl sm:text-2xl font-medium font-serif text-[#202124]">
-                  Personalized Commute News Broadcast
+                  Personalised Commute News Broadcast
                 </h1>
                 <p className="text-xs sm:text-sm text-[#5F6368] max-w-2xl leading-relaxed">
-                  Categorize articles by beat, filter by topics you care about today, and let Gemini synthesize a seamless spoken audio digest tailored to your exact commute duration.
+                  Categorise articles by beat, filter by topics you care about today, and let Gemini synthesise a seamless spoken audio digest tailored to your exact commute duration.
                 </p>
               </div>
 
@@ -1227,7 +1227,7 @@ export default function App() {
                   onToggleMute={handleToggleMute}
                 />
 
-                {/* Interactive Synchronized Transcript */}
+                {/* Interactive Synchronised Transcript */}
                 <div className="grid grid-cols-1 gap-6">
                   <TranscriptView
                     summary={currentSummary}

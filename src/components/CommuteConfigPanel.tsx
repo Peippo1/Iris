@@ -82,7 +82,7 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
       <div className="border-b border-[#E8EAED] pb-4">
         <h2 className="text-xl font-medium font-serif text-[#202124] flex items-center gap-2">
           <Sliders className="w-5 h-5 text-[#1A73E8]" />
-          <span>Commute Personalization</span>
+          <span>Commute Personalisation</span>
         </h2>
         <p className="text-xs text-[#5F6368] mt-1">
           Fine-tune duration, category focus, broadcast tone, and voices for your specific travel window.
@@ -169,7 +169,7 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
             })}
           </div>
           <p className="text-[11px] text-[#5F6368]">
-            Only articles matching the selected categories will be summarized in this broadcast.
+            Only articles matching the selected categories will be summarised in this broadcast.
           </p>
         </div>
       )}
@@ -324,12 +324,12 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
       {/* 5. Custom Listener Notes */}
       <div className="space-y-1.5 pt-2 border-t border-[#E8EAED]">
         <label htmlFor="commuter-notes-input" className="label text-[#202124] block">
-          Listener Personalization Notes (Optional)
+          Listener Personalisation Notes (Optional)
         </label>
         <input
           id="commuter-notes-input"
           type="text"
-          placeholder="e.g. 'I drive on highway I-95, focus on tech and energy impacts, keep it snappy'"
+          placeholder="e.g. 'I drive on the M4 motorway, focus on tech and energy impacts, keep it snappy'"
           value={config.commuterNotes}
           onChange={(e) => onChangeConfig({ commuterNotes: e.target.value })}
           className="w-full px-3.5 py-2 text-xs bg-[#F8F9FA] border border-[#E8EAED] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1A73E8] focus:bg-white text-[#202124]"

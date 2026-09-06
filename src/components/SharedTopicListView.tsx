@@ -53,8 +53,8 @@ export const SharedTopicListView: React.FC<SharedTopicListViewProps> = ({
             {sharedLibrary.title || `${sharedLibrary.creatorName}'s Commute Reading List`}
           </h2>
           <p className="text-xs sm:text-sm text-[#5F6368] max-w-2xl leading-relaxed">
-            This personalized news collection and commute setup was shared publicly via Firestore.
-            You can load these {sharedLibrary.articles?.length || 0} topics directly into your studio to generate a personalized audio broadcast.
+            This personalised news collection and commute setup was shared publicly via Firestore.
+            You can load these {sharedLibrary.articles?.length || 0} topics directly into your studio to generate a personalised audio broadcast.
           </p>
         </div>
 

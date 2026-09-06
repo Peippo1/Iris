@@ -270,7 +270,7 @@ export const ArticleManager: React.FC<ArticleManagerProps> = ({
               </span>
             </h1>
             <p className="text-xs sm:text-[0.875rem] text-[#5F6368] mt-1 leading-relaxed">
-              Categorize articles by beat and let Gemini synthesize a seamless spoken audio digest tailored to your exact commute duration.
+              Categorise articles by beat and let Gemini synthesise a seamless spoken audio digest tailored to your exact commute duration.
             </p>
           </div>
 
