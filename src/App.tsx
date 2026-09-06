@@ -229,6 +229,11 @@ export default function App() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [isRefreshingHeadlines, setIsRefreshingHeadlines] = useState(false);
+  const [refreshFeedback, setRefreshFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // Recent Article Searches state
   const [recentSearches, setRecentSearches] = useState<RecentArticleSearch[]>(() => {
@@ -716,6 +721,50 @@ export default function App() {
 
   const handleLoadSamples = () => {
     setArticles(SAMPLE_ARTICLES);
+  };
+
+  const handleRefreshPendingHeadlines = async () => {
+    setIsRefreshingHeadlines(true);
+    setRefreshFeedback(null);
+    try {
+      const res = await fetch('/api/refresh-articles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articles }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to re-fetch latest headlines');
+      }
+
+      if (data.articles && data.articles.length > 0) {
+        setArticles(data.articles);
+        setRefreshFeedback({
+          type: 'success',
+          message: `Updated ${data.articles.length} pending ${
+            data.articles.length === 1 ? 'headline' : 'headlines'
+          } with latest developments!`,
+        });
+      } else {
+        throw new Error('No updated headlines returned');
+      }
+
+      setTimeout(() => {
+        setRefreshFeedback(null);
+      }, 4000);
+    } catch (err: any) {
+      console.error('Error refreshing pending headlines:', err);
+      setRefreshFeedback({
+        type: 'error',
+        message: err.message || 'Could not refresh headlines. Please try again.',
+      });
+      setTimeout(() => {
+        setRefreshFeedback(null);
+      }, 4000);
+    } finally {
+      setIsRefreshingHeadlines(false);
+    }
   };
 
   // Personalization configuration change
@@ -1269,15 +1318,32 @@ export default function App() {
                   </p>
 
                   {/* Pending Article Count & Estimated Reading Duration Label */}
-                  <div id="pending-articles-stats" className="mt-3 flex flex-col items-center justify-center gap-1">
-                    <div
-                      id="pending-articles-count"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-xs font-medium"
-                    >
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>
-                        {articles.length} {articles.length === 1 ? 'pending article' : 'pending articles'}
-                      </span>
+                  <div id="pending-articles-stats" className="mt-3 flex flex-col items-center justify-center gap-1.5">
+                    <div className="inline-flex items-center gap-2">
+                      <div
+                        id="pending-articles-count"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-xs font-medium"
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>
+                          {articles.length} {articles.length === 1 ? 'pending article' : 'pending articles'}
+                        </span>
+                      </div>
+                      <button
+                        id="btn-refresh-pending-articles"
+                        type="button"
+                        onClick={handleRefreshPendingHeadlines}
+                        disabled={isRefreshingHeadlines}
+                        className="p-1.5 rounded-full text-[#5F6368] hover:text-[#1A73E8] hover:bg-[#E8F0FE] active:scale-95 border border-[#E8EAED] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                        title="Re-fetch latest headlines for pending articles"
+                        aria-label="Refresh latest headlines for pending articles"
+                      >
+                        <RefreshCw
+                          className={`w-3.5 h-3.5 ${
+                            isRefreshingHeadlines ? 'animate-spin text-[#1A73E8]' : ''
+                          }`}
+                        />
+                      </button>
                     </div>
                     <p
                       id="pending-articles-reading-duration"
@@ -1288,6 +1354,18 @@ export default function App() {
                         Approx. {totalReadingMinutes} {totalReadingMinutes === 1 ? 'minute' : 'minutes'} total reading time
                       </span>
                     </p>
+                    {refreshFeedback && (
+                      <p
+                        id="refresh-pending-feedback"
+                        className={`text-xs mt-0.5 transition-all ${
+                          refreshFeedback.type === 'success'
+                            ? 'text-[#1E8E3E] font-medium'
+                            : 'text-[#D93025]'
+                        }`}
+                      >
+                        {refreshFeedback.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 

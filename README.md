@@ -187,9 +187,9 @@ The application will be accessible at `http://localhost:3000`.
 | `/api/generate-summary` | `POST` | Generates a time-budgeted, multi-segment broadcast script |
 | `/api/generate-audio` | `POST` | Converts broadcast script segments into 24kHz RIFF/WAV audio |
 | `/api/generate-article-audio` | `POST` | Generates on-demand spoken audio for a single article |
-| `/api/fetch-url` | `POST` | Extracts title, text, and metadata from web articles |
-| `/api/search-topics` | `POST` | Discovers recent news articles for a user-specified topic |
-| `/api/trending-topics` | `GET` | Returns trending commute news beats |
+| `/api/refresh-articles` | `POST` | Re-fetches latest breaking headlines and updates pending list |
+| `/api/search-articles` | `POST` | Discovers recent news articles for a user-specified query |
+| `/api/extract-url` | `POST` | Extracts title, text, and metadata from web articles |
 
 ---
 

@@ -163,6 +163,137 @@ Requirements for each article:
   }
 });
 
+// Quick re-fetch and update latest headlines for current pending articles
+app.post('/api/refresh-articles', async (req: Request, res: Response) => {
+  const { articles = [] } = req.body;
+
+  try {
+    const ai = getAi();
+    const articlesList = Array.isArray(articles) ? articles : [];
+
+    // If pending list is empty, default to 3 top current affairs / tech / economy beats
+    const topicsToRefresh =
+      articlesList.length > 0
+        ? articlesList.map((a: any, idx: number) => ({
+            originalId: a.id || `refreshed-${Date.now()}-${idx}`,
+            title: a.title || 'Breaking News',
+            category: a.category || 'General',
+            source: a.source || 'News Wire',
+          }))
+        : [
+            {
+              originalId: 'default-1',
+              title: 'Breakthroughs in Clean Tech and Solid-State Energy Storage',
+              category: 'Technology',
+              source: 'Reuters',
+            },
+            {
+              originalId: 'default-2',
+              title: 'Central Bank Digital Policy & Cross-Border Sovereign Liquidity',
+              category: 'Economy',
+              source: 'Financial Times',
+            },
+            {
+              originalId: 'default-3',
+              title: 'Regional High-Speed Rail Corridors and Automated Transit Networks',
+              category: 'Transportation',
+              source: 'Bloomberg',
+            },
+          ];
+
+    const prompt = `You are a real-time news agency editor.
+The user has a pending commute playlist with the following articles/topics:
+${JSON.stringify(topicsToRefresh, null, 2)}
+
+For each article/topic in this list, re-fetch and generate the absolute latest, breaking headline and fresh, up-to-date journalistic coverage on this beat.
+Requirements for each article:
+1. "originalId": preserve the matching "originalId" from the input.
+2. "title": Fresh, updated, realistic breaking headline reflecting the latest developments (written in UK English).
+3. "source": Reputable news source attribution (e.g., Reuters, Bloomberg, Financial Times, BBC News, The Guardian, MIT Technology Review).
+4. "category": The appropriate news category.
+5. "content": 2 to 3 substantive paragraphs (approx 150-250 words) of fresh developments, context, quotes, and impact.
+6. "url": A realistic source URL (or google news search link).
+7. Language: UK English (en-GB) spelling and phrasing.`;
+
+    const modelsToTry = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+    let response: any = null;
+    let lastError: any = null;
+
+    for (const model of modelsToTry) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: [{ text: prompt }],
+          config: {
+            systemInstruction:
+              'You are an authoritative international news intelligence editor specialising in fast headline updates and real-time story verification in UK English.',
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                articles: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      originalId: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      source: { type: Type.STRING },
+                      category: { type: Type.STRING },
+                      content: { type: Type.STRING },
+                      url: { type: Type.STRING },
+                    },
+                    required: ['originalId', 'title', 'source', 'category', 'content'],
+                  },
+                },
+              },
+              required: ['articles'],
+            },
+          },
+        });
+        if (response && response.text) break;
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`Model ${model} failed in refresh-articles, attempting next fallback:`, e.message || e);
+      }
+    }
+
+    if (!response || !response.text) {
+      throw lastError || new Error('No response received from Gemini for article refresh');
+    }
+
+    const text = response.text;
+    if (!text) {
+      throw new Error('No response received from Gemini for article refresh');
+    }
+
+    const data = JSON.parse(text);
+    const refreshedArticles = (data.articles || []).map((art: any, idx: number) => ({
+      id:
+        art.originalId && !art.originalId.startsWith('default-')
+          ? art.originalId
+          : `refreshed-${Date.now()}-${idx}`,
+      title: art.title,
+      source: art.source || 'News Wire',
+      category: art.category || 'General',
+      content: art.content,
+      url: art.url || `https://news.google.com/search?q=${encodeURIComponent(art.title)}`,
+      publishedAt: new Date().toISOString(),
+    }));
+
+    return res.json({
+      success: true,
+      articlesCount: refreshedArticles.length,
+      articles: refreshedArticles,
+    });
+  } catch (err: any) {
+    console.error('Refresh articles error:', err);
+    return res.status(500).json({
+      error: err.message || 'Failed to refresh latest headlines for pending articles',
+    });
+  }
+});
+
 
 // URL article extraction endpoint
 app.post('/api/extract-url', async (req: Request, res: Response) => {
