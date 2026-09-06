@@ -250,6 +250,18 @@ export default function App() {
     timestamp: number;
   } | null>(null);
 
+  // Estimated total reading duration for all pending articles (standard 200 WPM rate)
+  const totalReadingMinutes = useMemo(() => {
+    if (!articles || articles.length === 0) return 0;
+    const totalWords = articles.reduce((acc, article) => {
+      const text = `${article.title || ''} ${article.content || ''}`.trim();
+      if (!text) return acc + 200;
+      const words = text.split(/\s+/).filter(Boolean).length;
+      return acc + (words > 0 ? words : 200);
+    }, 0);
+    return Math.max(1, Math.round(totalWords / 200));
+  }, [articles]);
+
   // Check URL query params for public share link on mount
   useEffect(() => {
     try {
@@ -1255,6 +1267,28 @@ export default function App() {
                   <p className="text-xs text-[#5F6368] mt-1 max-w-sm mx-auto leading-relaxed">
                     Select your articles and category focus in the generator, or listen through individual queued stories in the Listen Later tab.
                   </p>
+
+                  {/* Pending Article Count & Estimated Reading Duration Label */}
+                  <div id="pending-articles-stats" className="mt-3 flex flex-col items-center justify-center gap-1">
+                    <div
+                      id="pending-articles-count"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-xs font-medium"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>
+                        {articles.length} {articles.length === 1 ? 'pending article' : 'pending articles'}
+                      </span>
+                    </div>
+                    <p
+                      id="pending-articles-reading-duration"
+                      className="text-xs text-[#5F6368] font-medium flex items-center gap-1.5 justify-center"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-[#80868B]" />
+                      <span>
+                        Approx. {totalReadingMinutes} {totalReadingMinutes === 1 ? 'minute' : 'minutes'} total reading time
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
                 {/* Quick Topic Search Input Field */}
