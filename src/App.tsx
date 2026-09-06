@@ -26,6 +26,9 @@ import {
   Download,
   Search,
   Loader2,
+  ArrowUpDown,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import {
   NewsArticle,
@@ -234,6 +237,99 @@ export default function App() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [isBadgePulsing, setIsBadgePulsing] = useState(false);
+  const [badgePulseKey, setBadgePulseKey] = useState(0);
+  const prevArticlesCountRef = useRef(articles.length);
+
+  // Sorting state for pending articles list
+  type PendingSortOption = 'Newest' | 'Oldest' | 'Alphabetical';
+  const [pendingSortOrder, setPendingSortOrder] = useState<PendingSortOption>('Newest');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const [sortFeedback, setSortFeedback] = useState<string | null>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Timestamp extraction helper for reliable chronological sorting
+  const getArticleTimestamp = (article: NewsArticle): number => {
+    if (article.publishedAt) {
+      const time = new Date(article.publishedAt).getTime();
+      if (!isNaN(time) && time > 0) return time;
+    }
+    const numMatch = article.id.match(/\d{10,}/);
+    if (numMatch) {
+      const parsed = parseInt(numMatch[0], 10);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    const sampleMatch = article.id.match(/sample-(\d+)/);
+    if (sampleMatch) {
+      const n = parseInt(sampleMatch[1], 10);
+      return 1800000000000 - n * 3600000;
+    }
+    return 0;
+  };
+
+  // Pure sort function for pending articles list
+  const sortArticles = (list: NewsArticle[], order: PendingSortOption): NewsArticle[] => {
+    const sorted = [...list];
+    if (order === 'Newest') {
+      sorted.sort((a, b) => getArticleTimestamp(b) - getArticleTimestamp(a));
+    } else if (order === 'Oldest') {
+      sorted.sort((a, b) => getArticleTimestamp(a) - getArticleTimestamp(b));
+    } else if (order === 'Alphabetical') {
+      sorted.sort((a, b) =>
+        a.title.trim().localeCompare(b.title.trim(), undefined, { sensitivity: 'base' })
+      );
+    }
+    return sorted;
+  };
+
+  const handleSortChange = (order: PendingSortOption) => {
+    setPendingSortOrder(order);
+    setArticles((prev) => sortArticles(prev, order));
+    setSortFeedback(`Sorted pending articles by ${order}`);
+    setTimeout(() => {
+      setSortFeedback((prev) => (prev?.startsWith('Sorted pending articles by') ? null : prev));
+    }, 2500);
+  };
+
+  // Handle clicking outside the sort dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSortDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSortDropdownOpen(false);
+      }
+    };
+
+    if (isSortDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isSortDropdownOpen]);
+
+  // Pulse animation trigger on circular badge overlay whenever a new article is added to pending list
+  useEffect(() => {
+    if (articles.length > prevArticlesCountRef.current) {
+      setIsBadgePulsing(true);
+      setBadgePulseKey((prev) => prev + 1);
+      const timer = setTimeout(() => {
+        setIsBadgePulsing(false);
+      }, 1500);
+      prevArticlesCountRef.current = articles.length;
+      return () => clearTimeout(timer);
+    }
+    prevArticlesCountRef.current = articles.length;
+  }, [articles.length]);
 
   // Recent Article Searches state
   const [recentSearches, setRecentSearches] = useState<RecentArticleSearch[]>(() => {
@@ -578,7 +674,7 @@ export default function App() {
 
   // Article handlers
   const handleAddArticle = (article: NewsArticle) => {
-    setArticles((prev) => [article, ...prev]);
+    setArticles((prev) => sortArticles([article, ...prev], pendingSortOrder));
   };
 
   const handleRemoveArticle = (id: string) => {
@@ -694,7 +790,7 @@ export default function App() {
       }
 
       // Add articles to the pending playlist
-      setArticles((prev) => [...fetchedList, ...prev]);
+      setArticles((prev) => sortArticles([...fetchedList, ...prev], pendingSortOrder));
 
       // Save to recent searches history
       handleSaveRecentSearch(query, 'topic', fetchedList, 'Technology');
@@ -720,7 +816,7 @@ export default function App() {
   };
 
   const handleLoadSamples = () => {
-    setArticles(SAMPLE_ARTICLES);
+    setArticles(sortArticles(SAMPLE_ARTICLES, pendingSortOrder));
   };
 
   const handleRefreshPendingHeadlines = async () => {
@@ -739,7 +835,7 @@ export default function App() {
       }
 
       if (data.articles && data.articles.length > 0) {
-        setArticles(data.articles);
+        setArticles(sortArticles(data.articles, pendingSortOrder));
         setRefreshFeedback({
           type: 'success',
           message: `Updated ${data.articles.length} pending ${
@@ -1198,7 +1294,9 @@ export default function App() {
                 <ArticleManager
                   articles={articles}
                   onAddArticle={handleAddArticle}
-                  onAddMultipleArticles={(newArts) => setArticles((prev) => [...newArts, ...prev])}
+                  onAddMultipleArticles={(newArts) =>
+                    setArticles((prev) => sortArticles([...newArts, ...prev], pendingSortOrder))
+                  }
                   onRemoveArticle={handleRemoveArticle}
                   onUpdateArticleCategory={handleUpdateArticleCategory}
                   onClearArticles={handleClearArticles}
@@ -1297,13 +1395,51 @@ export default function App() {
                 {/* Pending Articles Count Badge Overlay */}
                 <div
                   id="pending-articles-badge-overlay"
-                  className="absolute -top-2.5 -right-2.5 sm:-top-3 sm:-right-3 flex items-center justify-center"
+                  className="absolute -top-2.5 -right-2.5 sm:-top-3 sm:-right-3 flex items-center justify-center pointer-events-auto"
                   title={`${articles.length} pending article${articles.length === 1 ? '' : 's'} in list`}
                   aria-label={`${articles.length} pending articles in list`}
+                  data-pulsing={isBadgePulsing ? 'true' : 'false'}
                 >
-                  <span className="w-8 h-8 rounded-full bg-[#1A73E8] text-white text-xs font-mono font-medium flex items-center justify-center shadow-md border-2 border-white">
+                  {/* Expanding pulse ripple wave animation on new article added */}
+                  {isBadgePulsing && (
+                    <>
+                      <motion.span
+                        key={`pulse-wave-1-${badgePulseKey}`}
+                        initial={{ scale: 1, opacity: 0.8 }}
+                        animate={{ scale: [1, 1.85, 2.4], opacity: [0.8, 0.4, 0] }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                        className="absolute w-8 h-8 rounded-full bg-[#1A73E8] pointer-events-none"
+                      />
+                      <motion.span
+                        key={`pulse-wave-2-${badgePulseKey}`}
+                        initial={{ scale: 1, opacity: 0.6 }}
+                        animate={{ scale: [1, 1.45, 1.9], opacity: [0.6, 0.3, 0] }}
+                        transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }}
+                        className="absolute w-8 h-8 rounded-full bg-[#4285F4] pointer-events-none"
+                      />
+                    </>
+                  )}
+
+                  {/* Circular article count badge */}
+                  <motion.span
+                    key={`badge-count-${badgePulseKey}`}
+                    animate={
+                      isBadgePulsing
+                        ? {
+                            scale: [1, 1.35, 0.92, 1.15, 1],
+                            boxShadow: [
+                              '0 0 0 0 rgba(26, 115, 232, 0.6)',
+                              '0 0 0 10px rgba(26, 115, 232, 0.2)',
+                              '0 0 0 18px rgba(26, 115, 232, 0)',
+                            ],
+                          }
+                        : { scale: 1 }
+                    }
+                    transition={{ duration: 0.85, ease: 'easeOut' }}
+                    className="relative z-10 w-8 h-8 rounded-full bg-[#1A73E8] text-white text-xs font-mono font-medium flex items-center justify-center shadow-md border-2 border-white"
+                  >
                     {articles.length}
-                  </span>
+                  </motion.span>
                 </div>
 
                 <div className="w-14 h-14 rounded-full bg-[#E8F0FE] text-[#1A73E8] flex items-center justify-center mx-auto">
@@ -1319,7 +1455,7 @@ export default function App() {
 
                   {/* Pending Article Count & Estimated Reading Duration Label */}
                   <div id="pending-articles-stats" className="mt-3 flex flex-col items-center justify-center gap-1.5">
-                    <div className="inline-flex items-center gap-2">
+                    <div className="inline-flex items-center gap-2 flex-wrap justify-center">
                       <div
                         id="pending-articles-count"
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-xs font-medium"
@@ -1344,6 +1480,64 @@ export default function App() {
                           }`}
                         />
                       </button>
+
+                      {/* Dropdown menu to sort pending articles by 'Newest', 'Oldest', or 'Alphabetical' */}
+                      <div
+                        id="pending-articles-sort-dropdown"
+                        ref={sortDropdownRef}
+                        className="relative inline-block text-left"
+                      >
+                        <button
+                          id="btn-sort-pending-dropdown"
+                          type="button"
+                          onClick={() => setIsSortDropdownOpen((prev) => !prev)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#3C4043] hover:text-[#202124] text-xs font-medium border border-[#DADCE0] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1A73E8]/30 shadow-2xs"
+                          aria-haspopup="true"
+                          aria-expanded={isSortDropdownOpen}
+                          title="Sort pending articles by Newest, Oldest, or Alphabetical"
+                        >
+                          <ArrowUpDown className="w-3 h-3 text-[#5F6368]" />
+                          <span>
+                            Sort: <strong className="font-semibold text-[#1A73E8]">{pendingSortOrder}</strong>
+                          </span>
+                          <ChevronDown
+                            className={`w-3 h-3 text-[#5F6368] transition-transform duration-150 ${
+                              isSortDropdownOpen ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </button>
+
+                        {isSortDropdownOpen && (
+                          <div
+                            id="menu-sort-pending-dropdown"
+                            className="absolute right-0 sm:left-1/2 sm:-translate-x-1/2 mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-[#E8EAED] py-1 z-30 animate-in fade-in zoom-in-95 duration-100 text-left"
+                            role="menu"
+                            aria-orientation="vertical"
+                            aria-labelledby="btn-sort-pending-dropdown"
+                          >
+                            {(['Newest', 'Oldest', 'Alphabetical'] as PendingSortOption[]).map((option) => (
+                              <button
+                                key={option}
+                                id={`btn-sort-${option.toLowerCase()}`}
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  handleSortChange(option);
+                                  setIsSortDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-3.5 py-1.5 text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                                  pendingSortOrder === option
+                                    ? 'bg-[#E8F0FE] text-[#1A73E8] font-medium'
+                                    : 'text-[#3C4043] hover:bg-[#F8F9FA] hover:text-[#202124]'
+                                }`}
+                              >
+                                <span>{option}</span>
+                                {pendingSortOrder === option && <Check className="w-3.5 h-3.5 text-[#1A73E8]" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p
                       id="pending-articles-reading-duration"
@@ -1354,6 +1548,14 @@ export default function App() {
                         Approx. {totalReadingMinutes} {totalReadingMinutes === 1 ? 'minute' : 'minutes'} total reading time
                       </span>
                     </p>
+                    {sortFeedback && (
+                      <p
+                        id="sort-pending-feedback"
+                        className="text-xs mt-0.5 text-[#1A73E8] font-medium transition-all"
+                      >
+                        {sortFeedback}
+                      </p>
+                    )}
                     {refreshFeedback && (
                       <p
                         id="refresh-pending-feedback"
