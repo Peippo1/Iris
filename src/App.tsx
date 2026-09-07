@@ -1392,6 +1392,7 @@ export default function App() {
                   onChangeVolume={setVolume}
                   isMuted={isMuted}
                   onToggleMute={handleToggleMute}
+                  audioElement={audioRef.current}
                 />
 
                 {/* Interactive Synchronised Transcript */}

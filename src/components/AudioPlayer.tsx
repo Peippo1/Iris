@@ -14,8 +14,10 @@ import {
   Sparkles,
   Gauge,
   Check,
+  Activity,
 } from 'lucide-react';
 import { CommuteSummary, AudioChapter } from '../types';
+import { FrequencyWaveform } from './FrequencyWaveform';
 
 interface AudioPlayerProps {
   summary: CommuteSummary;
@@ -32,6 +34,7 @@ interface AudioPlayerProps {
   onChangeVolume: (vol: number) => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  audioElement?: HTMLAudioElement | null;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -47,6 +50,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onChangeVolume,
   isMuted,
   onToggleMute,
+  audioElement,
 }) => {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -113,11 +117,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  // 24-bar waveform pattern matching Natural Tones layout
-  const waveformHeights = [
-    32, 48, 40, 56, 46, 36, 60, 44, 30, 52, 24, 40, 58, 36, 48, 28, 44, 52, 34, 48, 62, 38, 46, 30,
-  ];
-
   return (
     <div id="commute-audio-player-section" className="space-y-6">
       {/* Editorial Header Display */}
@@ -147,26 +146,30 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         className="bg-white p-6 sm:p-8 rounded-[32px] google-card-shadow relative space-y-6"
       >
         {/* Waveform & Remaining Time Header */}
-        <div className="flex items-center justify-between gap-4 pb-2">
-          {/* Vertical Audio Bars */}
-          <div className="flex gap-1 sm:gap-1.5 items-end h-16 flex-1 max-w-md">
-            {waveformHeights.map((h, i) => {
-              const barProgress = (i / waveformHeights.length) * 100;
-              const isPlayed = progressPercent >= barProgress;
-              return (
-                <div
-                  key={i}
-                  style={{ height: `${h}px` }}
-                  className={`w-1.5 sm:w-2 rounded-full transition-colors ${
-                    isPlayed ? 'bg-[#1A73E8]' : 'bg-[#E8EAED]'
-                  } ${isPlaying && isPlayed ? 'opacity-90' : ''}`}
-                />
-              );
-            })}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-2">
+          {/* Real-time Frequency Waveform Display */}
+          <div className="flex-1 max-w-lg space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#5F6368] flex items-center gap-1.5">
+                <Activity className={`w-3.5 h-3.5 ${isPlaying ? 'text-[#1A73E8] animate-pulse' : 'text-[#80868B]'}`} />
+                <span>{isPlaying ? 'Live Audio Frequency' : 'Frequency Waveform'}</span>
+              </span>
+              <span className="text-[10px] uppercase font-mono tracking-wider text-[#80868B]">
+                {isPlaying ? 'Active 32-Band' : 'Idle'}
+              </span>
+            </div>
+            <div className="bg-[#F8F9FA] rounded-2xl p-2.5 border border-[#E8EAED] overflow-hidden">
+              <FrequencyWaveform
+                audioElement={audioElement}
+                isPlaying={isPlaying}
+                isMuted={isMuted}
+                volume={volume}
+              />
+            </div>
           </div>
 
           {/* Time Remaining Counter */}
-          <div className="text-right shrink-0">
+          <div className="text-right shrink-0 self-end sm:self-center">
             <div className="text-2xl sm:text-3xl font-mono font-medium text-[#1A73E8]">
               {formatTime(remainingSeconds)}
             </div>
@@ -335,21 +338,29 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
           {/* Right Controls: Speed & Volume Pill */}
           <div className="flex items-center gap-3 bg-[#F8F9FA] px-4 py-2 rounded-full border border-[#E8EAED]">
-            {/* Speed Toggle */}
+            {/* Playback Speed Selector (0.5x, 1.0x, 1.5x, 2.0x) */}
             <div className="relative">
               <button
                 id="btn-playback-speed-toggle"
                 type="button"
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                className="text-xs font-medium font-mono text-[#1A73E8] hover:text-[#1765CC] cursor-pointer"
-                title="Playback speed"
+                className="text-xs font-semibold font-mono text-[#1A73E8] hover:text-[#1765CC] flex items-center gap-1 cursor-pointer bg-white px-2 py-0.5 rounded-md border border-[#E8EAED] shadow-2xs"
+                title="Select playback speed (0.5x, 1.0x, 1.5x, 2.0x)"
+                aria-label="Playback speed selector"
               >
-                {playbackRate}x
+                <Gauge className="w-3 h-3 text-[#1A73E8]" />
+                <span>{playbackRate.toFixed(1)}x</span>
               </button>
 
               {showSpeedMenu && (
-                <div className="absolute bottom-full right-0 mb-2 w-24 bg-white border border-[#E8EAED] rounded-xl shadow-lg p-1 z-30 space-y-0.5">
-                  {[0.8, 1.0, 1.25, 1.5, 1.75, 2.0].map((rate) => (
+                <div
+                  id="speed-selector-dropdown"
+                  className="absolute bottom-full right-0 mb-2 w-28 bg-white border border-[#E8EAED] rounded-xl shadow-lg p-1.5 z-30 space-y-1"
+                >
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-[#80868B] px-2 py-0.5 border-b border-[#F1F3F4]">
+                    Speed
+                  </div>
+                  {[0.5, 1.0, 1.5, 2.0].map((rate) => (
                     <button
                       key={rate}
                       id={`btn-speed-option-${rate}`}
@@ -358,14 +369,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
                         onChangePlaybackRate(rate);
                         setShowSpeedMenu(false);
                       }}
-                      className={`w-full px-2.5 py-1 text-left text-xs rounded-md flex items-center justify-between cursor-pointer ${
+                      className={`w-full px-2.5 py-1.5 text-left text-xs font-mono rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
                         playbackRate === rate
-                          ? 'bg-[#E8F0FE] text-[#1A73E8] font-medium'
+                          ? 'bg-[#E8F0FE] text-[#1A73E8] font-bold shadow-2xs'
                           : 'text-[#202124] hover:bg-[#F8F9FA]'
                       }`}
                     >
-                      <span>{rate}x</span>
-                      {playbackRate === rate && <Check className="w-3 h-3 text-[#1A73E8]" />}
+                      <span>{rate.toFixed(1)}x</span>
+                      {playbackRate === rate && <Check className="w-3.5 h-3.5 text-[#1A73E8]" />}
                     </button>
                   ))}
                 </div>
