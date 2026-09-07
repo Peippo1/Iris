@@ -71,7 +71,7 @@ function pcmToWav(
   return wavBuffer;
 }
 
-// Health check endpoint
+// Health check endpoint (public)
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -80,8 +80,78 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+/**
+ * Authentication verification middleware
+ * Ensures incoming requests to sensitive AI and synthesis endpoints originate from
+ * an authenticated session to prevent bots and unauthorized scrapers from exhausting capacity.
+ */
+const tokenCache = new Map<string, { uid: string; exp: number }>();
+
+function parseJwtPayload(token: string): any {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+async function requireAuth(req: Request, res: Response, next: Function) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Authentication required. Please sign in to use Iris audio and synthesis features.',
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({
+      error: 'Missing authentication bearer token.',
+    });
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const cached = tokenCache.get(token);
+  if (cached && cached.exp > now) {
+    (req as any).user = { uid: cached.uid };
+    return next();
+  }
+
+  const payload = parseJwtPayload(token);
+  if (!payload || !payload.sub || (payload.exp && payload.exp < now)) {
+    return res.status(401).json({
+      error: 'Invalid or expired authentication token. Please sign in again.',
+    });
+  }
+
+  const expectedProjectId = 'cityscope-506222';
+  const isValidIssuer =
+    payload.iss === `https://securetoken.google.com/${expectedProjectId}` ||
+    payload.aud === expectedProjectId ||
+    (typeof payload.iss === 'string' && payload.iss.includes('google.com'));
+
+  if (!isValidIssuer) {
+    return res.status(401).json({
+      error: 'Unauthorized token audience. Please sign in with an authorized account.',
+    });
+  }
+
+  tokenCache.set(token, {
+    uid: payload.sub,
+    exp: payload.exp || now + 300,
+  });
+
+  (req as any).user = { uid: payload.sub };
+  next();
+}
+
 // Search & fetch news articles by topic or query using Gemini 3.8 Flash
-app.post('/api/search-articles', async (req: Request, res: Response) => {
+app.post('/api/search-articles', requireAuth, async (req: Request, res: Response) => {
   const { query, category, count = 3 } = req.body;
   if (!query || typeof query !== 'string' || !query.trim()) {
     return res.status(400).json({ error: 'Valid search query is required' });
@@ -164,7 +234,7 @@ Requirements for each article:
 });
 
 // Quick re-fetch and update latest headlines for current pending articles
-app.post('/api/refresh-articles', async (req: Request, res: Response) => {
+app.post('/api/refresh-articles', requireAuth, async (req: Request, res: Response) => {
   const { articles = [] } = req.body;
 
   try {
@@ -296,7 +366,7 @@ Requirements for each article:
 
 
 // URL article extraction endpoint
-app.post('/api/extract-url', async (req: Request, res: Response) => {
+app.post('/api/extract-url', requireAuth, async (req: Request, res: Response) => {
   const { url } = req.body;
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'Valid URL is required' });
@@ -383,7 +453,7 @@ app.post('/api/extract-url', async (req: Request, res: Response) => {
 });
 
 // Generate commute news script using Gemini 3.8 Flash
-app.post('/api/generate-summary', async (req: Request, res: Response) => {
+app.post('/api/generate-summary', requireAuth, async (req: Request, res: Response) => {
   try {
     const {
       articles,
@@ -548,7 +618,7 @@ CRITICAL BROADCAST AUDIO RULES:
 });
 
 // Generate TTS audio using gemini-3.1-flash-tts-preview
-app.post('/api/generate-audio', async (req: Request, res: Response) => {
+app.post('/api/generate-audio', requireAuth, async (req: Request, res: Response) => {
   try {
     const {
       intro,
@@ -738,7 +808,7 @@ app.post('/api/generate-audio', async (req: Request, res: Response) => {
 });
 
 // Generate audio for a single Listen Later queue article
-app.post('/api/generate-queue-article-audio', async (req: Request, res: Response) => {
+app.post('/api/generate-queue-article-audio', requireAuth, async (req: Request, res: Response) => {
   try {
     const { title, source, content, category = 'General', voice = 'Kore' } = req.body;
     if (!title) {

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { ListenLaterItem, DEFAULT_CATEGORIES } from '../types';
 import type { User } from '../lib/firebase';
+import { authFetch } from '../lib/api';
 
 interface ListenLaterQueueProps {
   queueItems: ListenLaterItem[];
@@ -156,7 +157,7 @@ export const ListenLaterQueue: React.FC<ListenLaterQueueProps> = ({
     // 2. Synthesize audio on-the-fly using Gemini 3.8 Flash & 3.1 Flash TTS
     setIsSynthesizing(true);
     try {
-      const res = await fetch('/api/generate-queue-article-audio', {
+      const res = await authFetch('/api/generate-queue-article-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

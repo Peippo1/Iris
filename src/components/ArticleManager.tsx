@@ -20,6 +20,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { NewsArticle, DEFAULT_CATEGORIES } from '../types';
+import { authFetch } from '../lib/api';
 
 interface ArticleManagerProps {
   articles: NewsArticle[];
@@ -135,7 +136,7 @@ export const ArticleManager: React.FC<ArticleManagerProps> = ({
     setExtractError(null);
 
     try {
-      const res = await fetch('/api/extract-url', {
+      const res = await authFetch('/api/extract-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: urlInput.trim() }),
@@ -202,7 +203,7 @@ export const ArticleManager: React.FC<ArticleManagerProps> = ({
     }
 
     try {
-      const res = await fetch('/api/search-articles', {
+      const res = await authFetch('/api/search-articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

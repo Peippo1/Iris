@@ -55,92 +55,96 @@ export const Header: React.FC<HeaderProps> = ({
         </span>
       </div>
 
-      {/* Navigation Links with underline indicator */}
-      <nav className="hidden md:flex items-center gap-6 lg:gap-8 h-16">
-        <button
-          id="tab-btn-create"
-          type="button"
-          onClick={() => setActiveTab('generator')}
-          className={`h-full flex items-center text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
-            activeTab === 'generator'
-              ? 'text-[#1A73E8] border-[#1A73E8]'
-              : 'text-[#5F6368] hover:text-[#202124] border-transparent'
-          }`}
-        >
-          Curate & Brief
-        </button>
+      {/* Navigation Links with underline indicator - Only available when signed in */}
+      {user && (
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 h-16">
+          <button
+            id="tab-btn-create"
+            type="button"
+            onClick={() => setActiveTab('generator')}
+            className={`h-full flex items-center text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
+              activeTab === 'generator'
+                ? 'text-[#1A73E8] border-[#1A73E8]'
+                : 'text-[#5F6368] hover:text-[#202124] border-transparent'
+            }`}
+          >
+            Curate & Brief
+          </button>
 
-        <button
-          id="tab-btn-queue"
-          type="button"
-          onClick={() => setActiveTab('queue')}
-          className={`h-full flex items-center gap-1.5 text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
-            activeTab === 'queue'
-              ? 'text-[#1A73E8] border-[#1A73E8]'
-              : 'text-[#5F6368] hover:text-[#202124] border-transparent'
-          }`}
-        >
-          <span>Listen Later</span>
-          {queueCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-[10px] font-bold font-mono">
-              {queueCount}
-            </span>
-          )}
-        </button>
+          <button
+            id="tab-btn-queue"
+            type="button"
+            onClick={() => setActiveTab('queue')}
+            className={`h-full flex items-center gap-1.5 text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
+              activeTab === 'queue'
+                ? 'text-[#1A73E8] border-[#1A73E8]'
+                : 'text-[#5F6368] hover:text-[#202124] border-transparent'
+            }`}
+          >
+            <span>Listen Later</span>
+            {queueCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-[#E8F0FE] text-[#1A73E8] text-[10px] font-bold font-mono">
+                {queueCount}
+              </span>
+            )}
+          </button>
 
-        <button
-          id="tab-btn-listen"
-          type="button"
-          onClick={() => setActiveTab('player')}
-          className={`h-full flex items-center gap-1.5 text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
-            activeTab === 'player'
-              ? 'text-[#1A73E8] border-[#1A73E8]'
-              : 'text-[#5F6368] hover:text-[#202124] border-transparent'
-          }`}
-        >
-          <span>Commute Player</span>
-          {hasAudio && (
-            <span className="w-2 h-2 rounded-full bg-[#34A853] animate-ping" />
-          )}
-        </button>
-      </nav>
+          <button
+            id="tab-btn-listen"
+            type="button"
+            onClick={() => setActiveTab('player')}
+            className={`h-full flex items-center gap-1.5 text-[0.9rem] font-medium transition-colors cursor-pointer border-b-[3px] px-1 ${
+              activeTab === 'player'
+                ? 'text-[#1A73E8] border-[#1A73E8]'
+                : 'text-[#5F6368] hover:text-[#202124] border-transparent'
+            }`}
+          >
+            <span>Commute Player</span>
+            {hasAudio && (
+              <span className="w-2 h-2 rounded-full bg-[#34A853] animate-ping" />
+            )}
+          </button>
+        </nav>
+      )}
 
-      {/* Mobile Tab Selectors */}
-      <div className="flex md:hidden items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('generator')}
-          className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-            activeTab === 'generator'
-              ? 'bg-[#E8F0FE] text-[#1A73E8]'
-              : 'text-[#5F6368]'
-          }`}
-        >
-          Curate
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('queue')}
-          className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-            activeTab === 'queue'
-              ? 'bg-[#E8F0FE] text-[#1A73E8]'
-              : 'text-[#5F6368]'
-          }`}
-        >
-          Queue {queueCount > 0 ? `(${queueCount})` : ''}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('player')}
-          className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-            activeTab === 'player'
-              ? 'bg-[#E8F0FE] text-[#1A73E8]'
-              : 'text-[#5F6368]'
-          }`}
-        >
-          Player
-        </button>
-      </div>
+      {/* Mobile Tab Selectors - Only available when signed in */}
+      {user && (
+        <div className="flex md:hidden items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('generator')}
+            className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+              activeTab === 'generator'
+                ? 'bg-[#E8F0FE] text-[#1A73E8]'
+                : 'text-[#5F6368]'
+            }`}
+          >
+            Curate
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('queue')}
+            className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+              activeTab === 'queue'
+                ? 'bg-[#E8F0FE] text-[#1A73E8]'
+                : 'text-[#5F6368]'
+            }`}
+          >
+            Queue {queueCount > 0 ? `(${queueCount})` : ''}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('player')}
+            className={`px-2.5 py-1 text-xs font-medium rounded-full ${
+              activeTab === 'player'
+                ? 'bg-[#E8F0FE] text-[#1A73E8]'
+                : 'text-[#5F6368]'
+            }`}
+          >
+            Player
+          </button>
+        </div>
+      )}
 
       {/* Right Actions: Model Badge, History Button, and Account */}
       <div className="flex items-center gap-3">
@@ -148,21 +152,23 @@ export const Header: React.FC<HeaderProps> = ({
           Gemini 1.5 Flash
         </div>
 
-        {/* Saved Digests Trigger */}
-        <button
-          id="btn-saved-history"
-          type="button"
-          onClick={onOpenHistory}
-          className="p-2 text-[#5F6368] hover:text-[#1A73E8] hover:bg-[#E8F0FE] rounded-full transition-colors border border-[#E8EAED] relative cursor-pointer shrink-0"
-          title="View saved digests history"
-        >
-          <History className="w-4 h-4" />
-          {historyCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1A73E8] text-white text-[10px] font-bold flex items-center justify-center font-mono">
-              {historyCount}
-            </span>
-          )}
-        </button>
+        {/* Saved Digests Trigger - Only visible when signed in */}
+        {user && (
+          <button
+            id="btn-saved-history"
+            type="button"
+            onClick={onOpenHistory}
+            className="p-2 text-[#5F6368] hover:text-[#1A73E8] hover:bg-[#E8F0FE] rounded-full transition-colors border border-[#E8EAED] relative cursor-pointer shrink-0"
+            title="View saved digests history"
+          >
+            <History className="w-4 h-4" />
+            {historyCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#1A73E8] text-white text-[10px] font-bold flex items-center justify-center font-mono">
+                {historyCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* User Account / Sign In */}
         {user ? (

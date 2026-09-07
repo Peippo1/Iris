@@ -50,8 +50,10 @@ import { SavedDigestsModal } from './components/SavedDigestsModal';
 import { ListenLaterQueue } from './components/ListenLaterQueue';
 import { ShareLibraryModal } from './components/ShareLibraryModal';
 import { SharedTopicListView } from './components/SharedTopicListView';
+import { LoginView } from './components/LoginView';
 import { motion } from 'motion/react';
 import { useAuth } from './lib/useAuth';
+import { authFetch } from './lib/api';
 import {
   subscribeToSavedDigests,
   saveDigest,
@@ -769,7 +771,7 @@ export default function App() {
     setQuickTopicFeedback(null);
 
     try {
-      const res = await fetch('/api/search-articles', {
+      const res = await authFetch('/api/search-articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -823,7 +825,7 @@ export default function App() {
     setIsRefreshingHeadlines(true);
     setRefreshFeedback(null);
     try {
-      const res = await fetch('/api/refresh-articles', {
+      const res = await authFetch('/api/refresh-articles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ articles }),
@@ -1047,7 +1049,7 @@ export default function App() {
 
     try {
       // Step 1: Generate personalised script
-      const summaryRes = await fetch('/api/generate-summary', {
+      const summaryRes = await authFetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1071,7 +1073,7 @@ export default function App() {
       // Step 2: Generate TTS Audio using gemini-3.1-flash-tts-preview
       setGenerationStep('2/2 Synthesising natural studio audio with Gemini 3.1 Flash TTS...');
 
-      const audioRes = await fetch('/api/generate-audio', {
+      const audioRes = await authFetch('/api/generate-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1136,7 +1138,25 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        {/* Auth Error Banner if sign-in fails */}
+        {authLoading ? (
+          <div
+            id="auth-loading-state"
+            className="flex flex-col items-center justify-center min-h-[50vh] gap-3"
+          >
+            <Loader2 className="w-8 h-8 text-[#1A73E8] animate-spin" />
+            <p className="text-sm font-medium text-[#5F6368]">
+              Verifying your Iris session...
+            </p>
+          </div>
+        ) : !user ? (
+          <LoginView
+            onSignIn={signInWithGoogle}
+            authError={authError}
+            authLoading={authLoading}
+          />
+        ) : (
+          <>
+            {/* Auth Error Banner if sign-in fails */}
         {authError && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-[#EA4335] flex items-start justify-between gap-3 google-card-shadow-sm">
             <div className="flex items-start gap-2.5">
@@ -1725,6 +1745,8 @@ export default function App() {
               </motion.div>
             )}
           </div>
+        )}
+          </>
         )}
       </main>
 
