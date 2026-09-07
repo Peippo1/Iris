@@ -9,6 +9,7 @@ import {
   Volume2,
   Tag,
   Check,
+  PlayCircle,
 } from 'lucide-react';
 import { CommuteConfig, CommuteTone, HostFormat, GeminiVoice } from '../types';
 
@@ -336,7 +337,55 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
         />
       </div>
 
-      {/* 6. Primary Action: Generate Audio Summary */}
+      {/* 6. Playback Delivery & Auto-Play Setting */}
+      <div className="pt-2 border-t border-[#E8EAED]">
+        <div className="flex items-center justify-between gap-3 p-3 bg-[#F8F9FA] border border-[#E8EAED] rounded-2xl hover:border-[#D2E3FC] transition-colors">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <PlayCircle className="w-4 h-4 text-[#1A73E8]" />
+              <label
+                htmlFor="toggle-autoplay-on-generate"
+                className="text-xs font-medium text-[#202124] cursor-pointer"
+              >
+                Auto-Play Broadcast on Finish
+              </label>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
+                  config.autoPlayOnGenerate !== false
+                    ? 'bg-[#E8F0FE] text-[#1A73E8]'
+                    : 'bg-[#E8EAED] text-[#5F6368]'
+                }`}
+              >
+                {config.autoPlayOnGenerate !== false ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#5F6368] leading-tight">
+              Automatically start playing the audio briefing as soon as studio generation completes.
+            </p>
+          </div>
+          <button
+            id="toggle-autoplay-on-generate"
+            type="button"
+            role="switch"
+            aria-checked={config.autoPlayOnGenerate !== false}
+            onClick={() =>
+              onChangeConfig({ autoPlayOnGenerate: config.autoPlayOnGenerate === false })
+            }
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#1A73E8] focus:ring-offset-2 ${
+              config.autoPlayOnGenerate !== false ? 'bg-[#1A73E8]' : 'bg-[#DADCE0]'
+            }`}
+            title="Toggle auto-play upon generation finish"
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                config.autoPlayOnGenerate !== false ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* 7. Primary Action: Generate Audio Summary */}
       <div className="pt-2">
         <button
           id="btn-generate-audio-summary"

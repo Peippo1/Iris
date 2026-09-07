@@ -15,6 +15,7 @@ import {
   Gauge,
   Check,
   Activity,
+  PlayCircle,
 } from 'lucide-react';
 import { CommuteSummary, AudioChapter } from '../types';
 import { FrequencyWaveform } from './FrequencyWaveform';
@@ -35,6 +36,10 @@ interface AudioPlayerProps {
   isMuted: boolean;
   onToggleMute: () => void;
   audioElement?: HTMLAudioElement | null;
+  autoPlayOnGenerate?: boolean;
+  onToggleAutoPlay?: () => void;
+  isAutoplayPending?: boolean;
+  onStartAutoplay?: () => void;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -51,6 +56,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   isMuted,
   onToggleMute,
   audioElement,
+  autoPlayOnGenerate = true,
+  onToggleAutoPlay,
+  isAutoplayPending = false,
+  onStartAutoplay,
 }) => {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -139,6 +148,40 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           {summary.overview}
         </p>
       </div>
+
+      {/* Browser Autoplay Policy User Interaction Listener Banner */}
+      {isAutoplayPending && (
+        <div
+          id="autoplay-pending-banner"
+          onClick={onStartAutoplay}
+          className="p-4 bg-[#E8F0FE] border border-[#1A73E8]/40 rounded-[24px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[#1A73E8] cursor-pointer hover:bg-[#D2E3FC]/60 transition-all shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#1A73E8] text-white flex items-center justify-center shrink-0 shadow-xs animate-pulse">
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#174EA6]">
+                Commute Briefing Ready — Tap anywhere or press any key to start
+              </p>
+              <p className="text-xs text-[#1A73E8]/80">
+                Browser audio policy requires a user touch to activate auto-play. Click anywhere on this page to listen!
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-confirm-autoplay-start"
+            onClick={(e) => {
+              e.stopPropagation();
+              onStartAutoplay?.();
+            }}
+            className="px-4 py-2 bg-[#1A73E8] hover:bg-[#1765CC] text-white text-xs font-semibold rounded-full shadow-xs shrink-0 cursor-pointer self-end sm:self-center"
+          >
+            Play Now
+          </button>
+        </div>
+      )}
 
       {/* Main Player Card */}
       <div
@@ -413,6 +456,44 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Secondary Toolbar: Auto-Play Setting & Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#F1F3F4] text-xs">
+          <div className="flex items-center gap-2">
+            {onToggleAutoPlay && (
+              <button
+                id="btn-player-autoplay-toggle"
+                type="button"
+                onClick={onToggleAutoPlay}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
+                  autoPlayOnGenerate
+                    ? 'bg-[#E8F0FE] text-[#1A73E8] border-[#1A73E8]/30 font-medium shadow-2xs'
+                    : 'bg-[#F8F9FA] text-[#5F6368] border-[#E8EAED] hover:bg-[#F1F3F4]'
+                }`}
+                title="Toggle automatic playback as soon as a new commute briefing is generated"
+              >
+                <PlayCircle className="w-3.5 h-3.5" />
+                <span>Auto-play on finish: <strong>{autoPlayOnGenerate ? 'On' : 'Off'}</strong></span>
+              </button>
+            )}
+            <span className="text-[11px] text-[#80868B] hidden sm:inline">
+              {autoPlayOnGenerate ? 'Starts automatically when generation finishes' : 'Manual playback start'}
+            </span>
+          </div>
+
+          {summary.audioDataUrl && (
+            <button
+              id="btn-download-audio-secondary"
+              type="button"
+              onClick={handleDownloadAudio}
+              className="inline-flex items-center gap-1.5 text-xs text-[#1A73E8] hover:text-[#1765CC] hover:bg-[#E8F0FE] px-3 py-1.5 rounded-full transition-colors cursor-pointer border border-transparent hover:border-[#D2E3FC]"
+              title="Download offline .wav audio"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Offline WAV</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

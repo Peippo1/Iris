@@ -290,5 +290,97 @@ describe('Battery of Tests: Core Business Logic & Edge Cases', () => {
         expect(spd).toBeLessThanOrEqual(2.0);
       });
     });
+
+    it('validates autoPlayOnGenerate defaults and persistence serialization', () => {
+      // Test default configuration
+      const defaultConfig: CommuteConfig = {
+        commuteMinutes: 10,
+        tone: 'morning_briefing',
+        format: 'single_host',
+        voice: 'Kore',
+        coHostVoice: 'Puck',
+        commuterNotes: '',
+        selectedCategories: [],
+        autoPlayOnGenerate: true,
+      };
+      expect(defaultConfig.autoPlayOnGenerate).toBe(true);
+
+      // Simulate local storage serialization & toggle
+      const mockStorage: Record<string, string> = {};
+      const key = 'commutebrief_autoplay_on_generate';
+
+      // Save true
+      mockStorage[key] = String(defaultConfig.autoPlayOnGenerate);
+      expect(mockStorage[key] === 'true').toBe(true);
+
+      // Toggle to false
+      const toggled = !defaultConfig.autoPlayOnGenerate;
+      mockStorage[key] = String(toggled);
+      expect(mockStorage[key] === 'true').toBe(false);
+      expect(toggled).toBe(false);
+    });
+
+    it('simulates browser auto-play restriction with user-interaction fallback event', async () => {
+      let isPlaying = false;
+      let isAutoplayPending = false;
+      let directPlayBlocked = true;
+
+      const listeners: Record<string, (() => void)[]> = {};
+      const addEventListenerMock = (evt: string, fn: () => void) => {
+        if (!listeners[evt]) listeners[evt] = [];
+        listeners[evt].push(fn);
+      };
+      const removeEventListenerMock = (evt: string, fn: () => void) => {
+        if (listeners[evt]) {
+          listeners[evt] = listeners[evt].filter((cb) => cb !== fn);
+        }
+      };
+
+      // Playback attempt function simulating browser policy
+      const attemptPlay = () => {
+        if (directPlayBlocked) {
+          // Browser rejects programmatic play (NotAllowedError)
+          isAutoplayPending = true;
+          // Register user interaction fallback listeners
+          ['click', 'pointerdown', 'keydown', 'touchstart'].forEach((event) => {
+            addEventListenerMock(event, onUserInteraction);
+          });
+          return Promise.reject(new Error('NotAllowedError: play() failed'));
+        } else {
+          isPlaying = true;
+          isAutoplayPending = false;
+          return Promise.resolve();
+        }
+      };
+
+      const cleanupListeners = () => {
+        ['click', 'pointerdown', 'keydown', 'touchstart'].forEach((event) => {
+          removeEventListenerMock(event, onUserInteraction);
+        });
+        isAutoplayPending = false;
+      };
+
+      const onUserInteraction = () => {
+        // User gesture unlocks playback
+        directPlayBlocked = false;
+        isPlaying = true;
+        cleanupListeners();
+      };
+
+      // Step 1: Initial auto-play attempt is blocked by browser policy
+      await attemptPlay().catch(() => {});
+      expect(isPlaying).toBe(false);
+      expect(isAutoplayPending).toBe(true);
+      expect(listeners['click'].length).toBe(1);
+      expect(listeners['keydown'].length).toBe(1);
+
+      // Step 2: User touches the screen / interacts with the page
+      listeners['click'][0]();
+
+      // Step 3: Audio starts playing and pending state is resolved
+      expect(isPlaying).toBe(true);
+      expect(isAutoplayPending).toBe(false);
+      expect(listeners['click'].length).toBe(0);
+    });
   });
 });

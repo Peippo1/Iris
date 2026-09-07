@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Sparkles,
   Headphones,
@@ -68,12 +68,15 @@ import {
   saveRecentSearch,
   deleteRecentSearch,
   clearRecentSearches,
+  getUserPreferences,
+  saveUserPreferences,
 } from './lib/firestoreService';
 
 const STORAGE_KEY_SAVED_DIGESTS = 'commutebrief_saved_digests';
 const STORAGE_KEY_LISTEN_LATER = 'commutebrief_listen_later';
 const STORAGE_KEY_CUSTOM_CATEGORIES = 'commutebrief_custom_categories';
 const STORAGE_KEY_RECENT_SEARCHES = 'commutebrief_recent_searches';
+const STORAGE_KEY_AUTOPLAY_ON_GENERATE = 'commutebrief_autoplay_on_generate';
 
 const INITIAL_RECENT_SEARCHES: RecentArticleSearch[] = [
   {
@@ -155,6 +158,21 @@ export default function App() {
   const [articleCategoryFilter, setArticleCategoryFilter] = useState<string>('All');
   const [summaryCategoryFilter, setSummaryCategoryFilter] = useState<string[]>([]);
 
+  // Auto-play on generation finish persistent setting
+  const [autoPlayOnGenerate, setAutoPlayOnGenerate] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_AUTOPLAY_ON_GENERATE);
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  // Autoplay fallback state for browser user-gesture restrictions
+  const [isAutoplayPending, setIsAutoplayPending] = useState(false);
+  const isAutoplayPendingRef = useRef(false);
+  const interactionCleanupRef = useRef<(() => void) | null>(null);
+
   // Personalization configuration
   const [config, setConfig] = useState<CommuteConfig>({
     commuteMinutes: 10,
@@ -164,6 +182,7 @@ export default function App() {
     coHostVoice: 'Puck',
     commuterNotes: '',
     selectedCategories: [],
+    autoPlayOnGenerate: true,
   });
 
   // Listen Later Queue state
@@ -422,6 +441,21 @@ export default function App() {
       }
     });
 
+    // 4. Load persisted user preferences (including autoPlayOnGenerate)
+    getUserPreferences(user.uid).then((prefs) => {
+      if (prefs && typeof prefs.autoPlayOnGenerate === 'boolean') {
+        setAutoPlayOnGenerate(prefs.autoPlayOnGenerate);
+        setConfig((prev) => ({ ...prev, autoPlayOnGenerate: prefs.autoPlayOnGenerate }));
+        try {
+          localStorage.setItem(STORAGE_KEY_AUTOPLAY_ON_GENERATE, String(prefs.autoPlayOnGenerate));
+        } catch {
+          // ignore
+        }
+      }
+    }).catch((err) => {
+      console.warn('Could not load user preferences from Firestore:', err);
+    });
+
     return () => {
       unsubDigests();
       unsubQueue();
@@ -598,6 +632,98 @@ export default function App() {
     };
   }, []);
 
+  // User interaction listener cleanup & setup for browser auto-play policy
+  const cleanupInteractionListeners = useCallback(() => {
+    if (interactionCleanupRef.current) {
+      interactionCleanupRef.current();
+      interactionCleanupRef.current = null;
+    }
+    isAutoplayPendingRef.current = false;
+    setIsAutoplayPending(false);
+  }, []);
+
+  const setupUserInteractionListener = useCallback(() => {
+    cleanupInteractionListeners();
+
+    isAutoplayPendingRef.current = true;
+    setIsAutoplayPending(true);
+
+    const onUserInteraction = () => {
+      const audio = audioRef.current;
+      if (audio && isAutoplayPendingRef.current) {
+        audio
+          .play()
+          .then(() => {
+            cleanupInteractionListeners();
+          })
+          .catch((err) => {
+            console.warn('Playback error after user interaction gesture:', err);
+          });
+      }
+    };
+
+    const options: AddEventListenerOptions = { capture: true, once: true };
+    window.addEventListener('click', onUserInteraction, options);
+    window.addEventListener('pointerdown', onUserInteraction, options);
+    window.addEventListener('keydown', onUserInteraction, options);
+    window.addEventListener('touchstart', onUserInteraction, options);
+
+    interactionCleanupRef.current = () => {
+      window.removeEventListener('click', onUserInteraction, true);
+      window.removeEventListener('pointerdown', onUserInteraction, true);
+      window.removeEventListener('keydown', onUserInteraction, true);
+      window.removeEventListener('touchstart', onUserInteraction, true);
+    };
+  }, [cleanupInteractionListeners]);
+
+  const triggerAutoPlayWithInteractionFallback = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.src) return;
+
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          cleanupInteractionListeners();
+        })
+        .catch((err) => {
+          console.log(
+            'Browser auto-play restriction encountered, activating user-interaction listener:',
+            err
+          );
+          setupUserInteractionListener();
+        });
+    }
+  }, [cleanupInteractionListeners, setupUserInteractionListener]);
+
+  const handleToggleAutoPlay = (newVal?: boolean) => {
+    const nextVal = newVal !== undefined ? newVal : !autoPlayOnGenerate;
+    setAutoPlayOnGenerate(nextVal);
+    setConfig((prev) => ({ ...prev, autoPlayOnGenerate: nextVal }));
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTOPLAY_ON_GENERATE, String(nextVal));
+    } catch (e) {
+      console.warn('LocalStorage autoplay error:', e);
+    }
+    if (user) {
+      saveUserPreferences(user.uid, { autoPlayOnGenerate: nextVal }).catch((e) => {
+        console.warn('Firestore save autoPlayOnGenerate error:', e);
+      });
+    }
+    if (!nextVal) {
+      cleanupInteractionListeners();
+    }
+  };
+
+  const handleStartAutoplay = () => {
+    const audio = audioRef.current;
+    cleanupInteractionListeners();
+    if (audio && audio.src) {
+      audio.play().catch((err) => console.error('Play error on confirm:', err));
+    }
+  };
+
   // Sync audio source when currentSummary changes
   useEffect(() => {
     const audio = audioRef.current;
@@ -608,14 +734,32 @@ export default function App() {
       audio.playbackRate = playbackRate;
       audio.volume = isMuted ? 0 : volume;
       audio.load();
-      audio.play().catch((err) => {
-        console.log('Autoplay prevented by browser, click play to start:', err);
-      });
+      if (autoPlayOnGenerate) {
+        triggerAutoPlayWithInteractionFallback();
+      } else {
+        cleanupInteractionListeners();
+      }
     } else {
       audio.pause();
       audio.src = '';
+      cleanupInteractionListeners();
     }
-  }, [currentSummary?.audioDataUrl]);
+  }, [
+    currentSummary?.audioDataUrl,
+    autoPlayOnGenerate,
+    playbackRate,
+    volume,
+    isMuted,
+    triggerAutoPlayWithInteractionFallback,
+    cleanupInteractionListeners,
+  ]);
+
+  // Clean up listeners on unmount
+  useEffect(() => {
+    return () => {
+      cleanupInteractionListeners();
+    };
+  }, [cleanupInteractionListeners]);
 
   // Sync playbackRate & volume
   useEffect(() => {
@@ -867,7 +1011,11 @@ export default function App() {
 
   // Personalization configuration change
   const handleChangeConfig = (updates: Partial<CommuteConfig>) => {
-    setConfig((prev) => ({ ...prev, ...updates }));
+    if (typeof updates.autoPlayOnGenerate === 'boolean') {
+      handleToggleAutoPlay(updates.autoPlayOnGenerate);
+    } else {
+      setConfig((prev) => ({ ...prev, ...updates }));
+    }
   };
 
   // Category filter handlers for Audio Summary
@@ -911,6 +1059,8 @@ export default function App() {
   const handleTogglePlay = () => {
     const audio = audioRef.current;
     if (!audio || !audio.src) return;
+
+    cleanupInteractionListeners();
 
     if (isPlaying) {
       audio.pause();
@@ -1393,6 +1543,10 @@ export default function App() {
                   isMuted={isMuted}
                   onToggleMute={handleToggleMute}
                   audioElement={audioRef.current}
+                  autoPlayOnGenerate={autoPlayOnGenerate}
+                  onToggleAutoPlay={() => handleToggleAutoPlay()}
+                  isAutoplayPending={isAutoplayPending}
+                  onStartAutoplay={handleStartAutoplay}
                 />
 
                 {/* Interactive Synchronised Transcript */}

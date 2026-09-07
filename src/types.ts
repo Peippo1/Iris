@@ -38,6 +38,7 @@ export interface CommuteConfig {
   coHostVoice: GeminiVoice;
   commuterNotes: string;
   selectedCategories?: string[]; // Empty means all categories
+  autoPlayOnGenerate?: boolean;
 }
 
 export interface ScriptSegment {
@@ -98,6 +99,7 @@ export interface UserPreferences {
   preferredTone?: CommuteTone;
   customCategories?: string[];
   autoPlayNextQueue?: boolean;
+  autoPlayOnGenerate?: boolean;
 }
 
 export interface SharedLibrary {
