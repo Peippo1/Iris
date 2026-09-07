@@ -181,29 +181,29 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
           <span>Broadcast Style & Tone</span>
         </label>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {TONES.map((t) => (
             <button
               key={t.id}
               id={`btn-tone-${t.id}`}
               type="button"
               onClick={() => onChangeConfig({ tone: t.id })}
-              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+              className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                 config.tone === t.id
                   ? 'border-[#1A73E8] bg-[#E8F0FE]/40 ring-1 ring-[#1A73E8]/30 shadow-xs'
                   : 'border-[#E8EAED] bg-white hover:bg-[#F8F9FA]'
               }`}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm text-[#202124] flex items-center gap-1.5">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="font-medium text-xs text-[#202124] flex items-center gap-1.5">
                   <span>{t.icon}</span>
                   <span>{t.label}</span>
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#F1F3F4] text-[#5F6368]">
+                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#F1F3F4] text-[#5F6368]">
                   {t.badge}
                 </span>
               </div>
-              <p className="text-xs text-[#5F6368] leading-relaxed">{t.desc}</p>
+              <p className="text-[11px] text-[#5F6368] leading-relaxed line-clamp-2">{t.desc}</p>
             </button>
           ))}
         </div>
@@ -214,7 +214,7 @@ export const CommuteConfigPanel: React.FC<CommuteConfigPanelProps> = ({
         <div className="flex items-center justify-between">
           <label className="label text-[#202124] flex items-center gap-1.5">
             <Mic className="w-3.5 h-3.5 text-[#1A73E8]" />
-            <span>Anchor Voices (Gemini 3.1 Flash TTS)</span>
+            <span>Anchor Voices (Gemini TTS)</span>
           </label>
           <div className="flex items-center gap-1 bg-[#F1F3F4] p-0.5 rounded-full">
             <button

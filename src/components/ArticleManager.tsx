@@ -260,18 +260,17 @@ export const ArticleManager: React.FC<ArticleManagerProps> = ({
   return (
     <div id="article-manager-section" className="space-y-6">
       {/* Top Banner / Actions Bar */}
-      <div className="bg-white rounded-[24px] google-card-shadow p-6 sm:p-7">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#E8EAED]">
+      <div className="bg-white rounded-[24px] google-card-shadow p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E8EAED]">
           <div>
-            <span className="label text-[#1A73E8]">AI Audio Studio</span>
-            <h1 className="text-xl sm:text-2xl font-medium font-serif text-[#202124] flex items-center gap-2 mt-1">
-              <span>Articles for Your Commute</span>
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] font-mono">
+            <h2 className="text-lg sm:text-xl font-medium font-serif text-[#202124] flex items-center gap-2">
+              <span>Articles Playlist</span>
+              <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#E8F0FE] text-[#1A73E8] font-mono">
                 {articles.length} {articles.length === 1 ? 'story' : 'stories'}
               </span>
-            </h1>
-            <p className="text-xs sm:text-[0.875rem] text-[#5F6368] mt-1 leading-relaxed">
-              Categorise articles by beat and let Gemini synthesise a seamless spoken audio digest tailored to your exact commute duration.
+            </h2>
+            <p className="text-xs text-[#5F6368] mt-0.5">
+              Add topics, web links, or text to include in your personalized spoken digest.
             </p>
           </div>
 
